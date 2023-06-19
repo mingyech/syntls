@@ -51,7 +51,7 @@ func main() {
 		ID:       54321,
 	}
 
-	ip := convertHeaderToLayer(header)
+	ip := headerToLayer(header)
 
 	// Define the TCP layer
 	tcp := &layers.TCP{
@@ -81,7 +81,7 @@ func main() {
 	}
 }
 
-func convertHeaderToLayer(header *ipv4.Header) *layers.IPv4 {
+func headerToLayer(header *ipv4.Header) *layers.IPv4 {
 	return &layers.IPv4{
 		Version:    4,
 		IHL:        uint8(header.Len / 4), // header length is in 4-octet units
