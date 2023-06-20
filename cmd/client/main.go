@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 
@@ -29,29 +30,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	c, err := net.ListenPacket("ip4:udp", laddr.IP.String())
+	c, err := net.DialIP("ip4:tcp", &net.IPAddr{IP: laddr.IP}, &net.IPAddr{IP: raddr.IP})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
-	r, err := ipv4.NewRawConn(c)
-	if err != nil {
-		log.Fatal(err)
+	ip := &layers.IPv4{
+		SrcIP:    net.ParseIP(c.LocalAddr().String()),
+		DstIP:    net.ParseIP(c.RemoteAddr().String()),
+		Protocol: layers.IPProtocolTCP,
 	}
 
-	header := &ipv4.Header{
-		Version:  ipv4.Version,
-		Len:      ipv4.HeaderLen,
-		TotalLen: ipv4.HeaderLen + 20, // 20 bytes for payload
-		TTL:      64,
-		Protocol: 6, // TCP
-		Dst:      raddr.IP,
-		Src:      laddr.IP,
-		ID:       54321,
-	}
-
-	ip := headerToLayer(header)
+	fmt.Printf("ip header: %+v\n", ip)
 
 	// Define the TCP layer
 	tcp := &layers.TCP{
@@ -70,12 +61,13 @@ func main() {
 		FixLengths:       true,
 	}
 
-	err = gopacket.SerializeLayers(buf, opts, ip, tcp)
+	err = gopacket.SerializeLayers(buf, opts, tcp)
 	if err != nil {
 		panic(err)
 	}
 
-	err = r.WriteTo(header, buf.Bytes(), nil)
+	// err = r.WriteTo(header, buf.Bytes(), nil)
+	c.Write(buf.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}
