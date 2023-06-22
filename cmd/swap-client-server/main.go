@@ -69,7 +69,14 @@ func dial(laddr, raddr *net.TCPAddr) error {
 		}}})
 	defer conn.Close()
 
-	conn.Write([]byte("Heyyyyyyy"))
+	buffer := make([]byte, 4096)
+
+	bytesRead, err := conn.Read(buffer)
+	if err != nil {
+		panic(err)
+	} else {
+		log.Println("Received message:", string(buffer[:bytesRead]))
+	}
 	return nil
 }
 
@@ -84,17 +91,10 @@ func listen(laddr *net.TCPAddr) error {
 		panic(err)
 	}
 
-	conn := tls.UClient(tcpConn, &tls.Config{InsecureSkipVerify: true}, tls.HelloRandomized)
+	conn := tls.UClient(tcpConn, &tls.Config{InsecureSkipVerify: true}, tls.HelloGolang)
 	defer conn.Close()
 
-	buffer := make([]byte, 4096)
-
-	bytesRead, err := conn.Read(buffer)
-	if err != nil {
-		panic(err)
-	} else {
-		log.Println("Received message:", string(buffer[:bytesRead]))
-	}
+	conn.Write([]byte("Heyyyyyyy"))
 
 	return nil
 }
